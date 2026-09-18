@@ -1,0 +1,5 @@
+#!/bin/sh
+# Устанавливается вручную под root: /usr/local/sbin/lvenok-panic (0700).
+# Настоящий kernel panic через Magic SysRq. См. lvenok/README.md.
+echo 1 >/proc/sys/kernel/sysrq
+echo c >/proc/sysrq-trigger

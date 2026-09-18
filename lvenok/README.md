@@ -46,3 +46,40 @@ set -g status-interval 15
 ```bash
 [[ $- == *i* ]] && ~/dsd/lvenok/lvenok.sh start >/dev/null
 ```
+
+## Режим ярости (только для одноразовой VM!)
+
+⚠️ Это по-настоящему роняет систему через kernel panic (Magic SysRq).
+Включай только в одноразовой VirtualBox VM — и лучше сначала сделай
+снэпшот "до эксперимента", после паники гостя нужно перезагружать.
+Никогда не включай на машине с важными несохранёнными данными.
+
+Логика: если подряд ввести `LVENOK_RAGE_THRESHOLD` (по умолчанию 5)
+неверных команд (ненулевой exit code), лвёнок психует и вызывает
+настоящий kernel panic. Любая успешная команда сбрасывает счётчик.
+
+### Установка (один раз, внутри VM)
+
+1. Поставь helper-скрипт под root и разреши запускать **именно его**
+   без пароля — без общего `NOPASSWD: ALL`, только это одно действие:
+   ```bash
+   sudo install -o root -g root -m 0700 lvenok/lvenok-panic /usr/local/sbin/lvenok-panic
+   echo "$USER ALL=(root) NOPASSWD: /usr/local/sbin/lvenok-panic" | sudo tee /etc/sudoers.d/lvenok-panic
+   sudo chmod 0440 /etc/sudoers.d/lvenok-panic
+   sudo visudo -c   # проверить, что синтаксис не сломан
+   ```
+2. Подключи трекер ошибок в `~/.bashrc`:
+   ```bash
+   export LVENOK_RAGE_ENABLE=1        # без этого ничего не сработает
+   export LVENOK_RAGE_THRESHOLD=5     # сколько ошибок подряд до паники
+   source ~/dsd/lvenok/rage.sh
+   ```
+3. `source ~/.bashrc` и ошибись 5 раз подряд (`asdasd`, `qwe`, ...), чтобы проверить.
+
+### Выключить
+Убери три строки из `.bashrc` или поставь `export LVENOK_RAGE_ENABLE=0`.
+
+### Если стандартный sysrq выключен в VM
+Некоторые дистрибутивы по умолчанию ограничивают sysrq через
+`kernel.sysrq` в sysctl. `lvenok-panic` сам делает `echo 1 > .../sysrq`
+перед крашем, так что обычно ничего донастраивать не нужно.
